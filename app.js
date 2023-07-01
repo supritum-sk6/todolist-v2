@@ -2,6 +2,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const date = require(__dirname+"/date");
 const mongoose = require("mongoose");
+const _ = require("lodash");
+
 const app = express();
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -95,7 +97,8 @@ app.get("/about", function(req, res){
     res.render("about");
 });
 app.get("/:customParam", function(req, res){
-    const customListName = req.params.customParam;
+
+    const customListName = _.capitalize(req.params.customParam);
     List.find({name: customListName}).then(function(findItems){
         if(findItems.length===0){
             const list = new List({
@@ -149,18 +152,25 @@ app.post("/", function(req, res){
 });
 app.post("/delete", function(req, res){
     //console.log(req.body.checkbox);
-    var idTitle = req.body.checkbox.split(', ');
-    console.log(idTitle);
-    if(idTitle[1]==="Work"){
-        WorkItem.deleteOne({_id: idTitle[0]}).then(function(deleted){
-            console.log(deleted);
+    var id = req.body.checkbox;
+    var listTitle = req.body.checkbox1;
+
+    if(listTitle==="Work"){
+        WorkItem.deleteOne({_id: id}).then(function(deleted){
+            //console.log(deleted);
         });
         res.redirect("/work");
-    }else{
-        Item.deleteOne({_id: idTitle[0]}).then(function(deleted){
-            console.log(deleted);
+    }else if(listTitle===day){
+        Item.deleteOne({_id: id}).then(function(deleted){
+            //console.log(deleted);
         });
         res.redirect("/");
+    }
+    else{
+        List.findOneAndUpdate({name: listTitle}, { $pull: { lists: { _id: id } } }).then(function(){
+            res.redirect("/"+listTitle);
+        });
+        
     }
     
 })
